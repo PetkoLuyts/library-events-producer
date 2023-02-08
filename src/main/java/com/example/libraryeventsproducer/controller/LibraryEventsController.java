@@ -1,6 +1,7 @@
 package com.example.libraryeventsproducer.controller;
 
 import com.example.libraryeventsproducer.domain.LibraryEvent;
+import com.example.libraryeventsproducer.domain.LibraryEventType;
 import com.example.libraryeventsproducer.producer.LibraryEventProducer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ public class LibraryEventsController {
 
     @PostMapping("/v1/libraryevent")
     public ResponseEntity<LibraryEvent> postLibraryEvent(@RequestBody LibraryEvent libraryEvent) throws JsonProcessingException {
+        libraryEvent.setLibraryEventType(LibraryEventType.NEW);
         libraryEventProducer.sendLibraryEventApproach2(libraryEvent);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(libraryEvent);
