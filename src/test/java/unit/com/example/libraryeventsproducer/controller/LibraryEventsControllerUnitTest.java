@@ -100,4 +100,28 @@ public class LibraryEventsControllerUnitTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void updateLibraryEvent_withNullLibraryEventId() throws Exception {
+        Book book = Book.builder()
+                .bookId(123)
+                .bookAuthor("Petko")
+                .bookName("Kafka Spring")
+                .build();
+
+        LibraryEvent libraryEvent = LibraryEvent.builder()
+                .libraryEventId(null)
+                .book(book)
+                .build();
+
+        String json = objectMapper.writeValueAsString(libraryEvent);
+        when(libraryEventProducer.sendLibraryEventApproach2(isA(LibraryEvent.class))).thenReturn(null);
+
+        mockMvc.perform(
+                        put("/v1/libraryevent")
+                                .content(json)
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("Please pass the LibraryEventId"));
+    }
 }
