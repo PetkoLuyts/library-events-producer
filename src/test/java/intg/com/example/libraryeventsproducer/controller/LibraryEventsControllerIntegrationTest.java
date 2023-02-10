@@ -4,6 +4,7 @@ import com.example.libraryeventsproducer.domain.Book;
 import com.example.libraryeventsproducer.domain.LibraryEvent;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.AfterEach;
@@ -77,5 +78,39 @@ public class LibraryEventsControllerIntegrationTest {
         String expectedRecord = "{\"libraryEventId\":null,\"libraryEventType\":\"NEW\",\"book\":{\"bookId\":123,\"bookName\":\"Kafka Spring\",\"bookAuthor\":\"Petko\"}}";
         String value = consumerRecord.value();
         assertEquals(expectedRecord, value);
+    }
+
+    @Test
+    @Timeout(5)
+    void putLibraryEvent() {
+        Book book = Book.builder()
+                .bookId(123)
+                .bookAuthor("Petko")
+                .bookName("Kafka Spring")
+                .build();
+
+        LibraryEvent libraryEvent = LibraryEvent.builder()
+                .libraryEventId(123)
+                .book(book)
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("content-type", MediaType.APPLICATION_JSON.toString());
+        HttpEntity<LibraryEvent> request = new HttpEntity<>(libraryEvent, headers);
+
+        ResponseEntity<LibraryEvent> responseEntity = restTemplate.exchange("/v1/libraryevent", HttpMethod.PUT, request, LibraryEvent.class);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+
+        ConsumerRecords<Integer, String> consumerRecords = KafkaTestUtils.getRecords(consumer);
+
+        //assert consumerRecords.count() == 2;
+        consumerRecords.forEach(record-> {
+            if(record.key() != null){
+                String expectedRecord = "{\"libraryEventId\":123,\"libraryEventType\":\"UPDATE\",\"book\":{\"bookId\":123,\"bookName\":\"Kafka Spring\",\"bookAuthor\":\"Petko\"}}";
+                String value = record.value();
+                assertEquals(expectedRecord, value);
+            }
+        });
     }
 }
